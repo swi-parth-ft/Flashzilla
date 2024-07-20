@@ -9,50 +9,37 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var currentAmount = 0.0
-    @State private var finalAmount = 1.0
-    @State private var currentAngle = Angle.zero
-    @State private var finalAngle = Angle.zero
+    @State private var offset = CGSize.zero
+    @State private var isDragging = false
+    
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Long press")
-                .onLongPressGesture(minimumDuration: 2) {
-                    print("Long pressed")
-                } onPressingChanged: { inProgress in
-                    print("In progress: \(inProgress)")
+        let dragGesture = DragGesture()
+            .onChanged { value in
+                offset = value.translation
+            }
+            .onEnded { _ in
+                withAnimation {
+                    offset = .zero
+                    isDragging = false
                 }
-            
-            Text("Zoom")
-                        .scaleEffect(finalAmount + currentAmount)
-                        .gesture(
-                            MagnifyGesture()
-                                .onChanged { value in
-                                    currentAmount = value.magnification - 1
-                                }
-                                .onEnded { value in
-                                    finalAmount += currentAmount
-                                    currentAmount = 0
-                                }
-                        )
-            
-            
-            Text("rotation")
-                .rotationEffect(finalAngle + currentAngle)
-                .gesture(
-                    RotateGesture()
-                        .onChanged { value in
-                            currentAngle = value.rotation
-                        }
-                        .onEnded { value in
-                            finalAngle += currentAngle
-                            currentAngle = .zero
-                        }
-                )
-        }
-        .padding()
+            }
+        
+        let pressGesture = LongPressGesture()
+            .onEnded { value in
+                withAnimation {
+                    isDragging = true
+                }
+            }
+        
+        let combinedGesture = pressGesture.sequenced(before: dragGesture)
+        
+        Circle()
+            .fill(.orange)
+        .frame(width: 100, height: 100)
+        .scaleEffect(isDragging ? 1.5 : 1)
+        .offset(offset)
+        .gesture(combinedGesture)
     }
 }
 
