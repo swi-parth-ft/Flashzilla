@@ -14,6 +14,8 @@ struct CardView: View {
     @State private var offset = CGSize.zero
     var removal: (() -> Void)? = nil
     
+    
+    
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 25)
@@ -63,6 +65,7 @@ struct CardView: View {
         .onTapGesture {
             isShowingAnswer.toggle()
         }
+        
     }
 }
 
