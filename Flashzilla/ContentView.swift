@@ -23,7 +23,7 @@ struct ContentView: View {
     @Environment(\.accessibilityVoiceOverEnabled) var accessibilityVoiceOverEnabled
     
     @Environment(\.modelContext) var modelContext
-    @Query(sort: \Card.date) var cards: [Card]
+    @Query(sort: \Card.date, order: .reverse) var cards: [Card]
     
     @State private var showingEditScreen = false
     
@@ -163,8 +163,8 @@ struct ContentView: View {
         modelContext.delete(cards[index])
         
         if !isCorrect {
-
-            modelContext.insert(card)
+            let newCard = Card(id: card.id, prompt: card.prompt, answer: card.answer, date: Date())
+                    modelContext.insert(newCard)
         }
         
         // Update the version to force view refresh
