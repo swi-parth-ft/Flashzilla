@@ -8,10 +8,13 @@
 import SwiftUI
 
 
+
 extension View {
     func stacked(at position: Int, in total: Int) -> some View {
         let offset = Double(total - position)
-        return self.offset(y: offset * 10)
+        return self
+            .offset(y: offset * 10)
+            .zIndex(Double(position))
     }
 }
 struct ContentView: View {
@@ -24,7 +27,8 @@ struct ContentView: View {
     
     @State private var timeRemaining = 100
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
+    @State private var cardsVersion = UUID()
+
     
     @Environment(\.scenePhase) var scenePhase
     @State private var isActive = false
@@ -45,17 +49,21 @@ struct ContentView: View {
                     .clipShape(.capsule)
                 
                 ZStack {
-                    ForEach(0..<cards.count, id: \.self) { index in
-                        CardView(card: cards[index]) {
+                    ForEach(cards) { card in
+                        CardView(card: card) { isCorrect in
                             withAnimation {
-                                removeCard(at: index)
+                                if let index = cards.firstIndex(of: card) {
+                                    removeCard(at: index, isCorrect: isCorrect)
+                                }
                             }
                         }
-                        .stacked(at: index, in: cards.count)
-                        .allowsHitTesting(index == cards.count - 1)
-                        .accessibilityHidden(index < cards.count - 1)
+                        .stacked(at: cards.firstIndex(of: card) ?? 0, in: cards.count)
+                        .allowsHitTesting(cards.firstIndex(of: card) == cards.count - 1)
+                        .accessibilityHidden(cards.firstIndex(of: card) ?? 0 < cards.count - 1)
+                        .id(card.id)
                     }
                 }
+                .id(cardsVersion)
                 .allowsHitTesting(timeRemaining > 0)
                 
                 if cards.isEmpty {
@@ -92,7 +100,7 @@ struct ContentView: View {
                     HStack {
                         Button {
                             withAnimation {
-                                removeCard(at: cards.count - 1)
+                                removeCard(at: cards.count - 1, isCorrect: false)
                             }
                         } label: {
                             Image(systemName: "xmark.circle")
@@ -106,7 +114,7 @@ struct ContentView: View {
                         Spacer()
                         Button {
                             withAnimation {
-                                removeCard(at: cards.count - 1)
+                                removeCard(at: cards.count - 1, isCorrect: true)
                             }
                         } label: {
                             Image(systemName: "checkmark.circle")
@@ -146,15 +154,37 @@ struct ContentView: View {
         .onAppear(perform: resetCards)
     }
     
-    func removeCard(at index: Int) {
+    func removeCard(at index: Int, isCorrect: Bool) {
+        guard index >= 0, index < cards.count else { return }
+
+        let card = cards[index]
         
-        guard index >= 0 else { return }
+        if !isCorrect {
+            // Add the card back to the end of the array
+            cards.append(card)
+        }
+        // Remove the card from the array
         cards.remove(at: index)
         
+        // Update the version to force view update
+        cardsVersion = UUID()
+        
+        // Save the updated cards data
+        saveData()
+        
+        // Check if there are any cards left
         if cards.isEmpty {
             isActive = false
         }
     }
+
+    
+    func saveData() {
+        if let data = try? JSONEncoder().encode(cards) {
+            UserDefaults.standard.set(data, forKey: "Cards")
+        }
+    }
+    
     
     func resetCards() {
         timeRemaining = 100
