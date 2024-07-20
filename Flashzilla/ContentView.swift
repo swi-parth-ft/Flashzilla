@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-
+import SwiftData
 
 
 extension View {
@@ -22,14 +22,14 @@ struct ContentView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) var accessibilityDifferentiateWithoutColor
     @Environment(\.accessibilityVoiceOverEnabled) var accessibilityVoiceOverEnabled
     
-    @State private var cards = [Card]()
+    @Environment(\.modelContext) var modelContext
+    @Query(sort: \Card.date) var cards: [Card]
+    
     @State private var showingEditScreen = false
     
     @State private var timeRemaining = 100
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var cardsVersion = UUID()
-    
-    let dataManager = DataManager()
     
     @Environment(\.scenePhase) var scenePhase
     @State private var isActive = false
@@ -159,21 +159,18 @@ struct ContentView: View {
         guard index >= 0, index < cards.count else { return }
         
         let card = cards[index]
-        
-        // Remove the card from its current position
-        cards.remove(at: index)
+
+        modelContext.delete(cards[index])
         
         if !isCorrect {
-            // Add the card to the end of the array if incorrect
-            cards.insert(card, at: 0)
+
+            modelContext.insert(card)
         }
         
         // Update the version to force view refresh
         cardsVersion = UUID()
-        
-        // Save the updated cards data
-        dataManager.saveData(cards)
-        
+
+        try? modelContext.save()
         // Check if there are any cards left
         if cards.isEmpty {
             isActive = false
@@ -183,30 +180,11 @@ struct ContentView: View {
     func resetCards() {
         timeRemaining = 100
         isActive = true
-        cards = dataManager.loadData()
     }
     
     
 }
-
-class DataManager {
-    func loadData() -> [Card] {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                return decoded
-            }
-        }
-        return []
-    }
-    
-    func saveData(_ cards: [Card]) {
-        if let data = try? JSONEncoder().encode(cards) {
-            UserDefaults.standard.set(data, forKey: "Cards")
-        }
-        
-    }
-}
-    
+   
     #Preview {
         ContentView()
     }

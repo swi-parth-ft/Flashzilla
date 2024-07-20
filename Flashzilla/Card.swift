@@ -6,11 +6,19 @@
 //
 
 import Foundation
+import SwiftData
 
-struct Card: Codable, Identifiable, Hashable {
+@Model
+class Card: Identifiable, Hashable {
     var id = UUID()
     var prompt: String
     var answer: String
-    
-    static let example = Card(prompt: "What is the capital of Canada?", answer: "Ottawa")
+    var date: Date
+    static let example = Card(prompt: "What is the capital of Canada?", answer: "Ottawa", date: Date.now)
+    init(id: UUID = UUID(), prompt: String, answer: String, date: Date) {
+        self.id = id
+        self.prompt = prompt
+        self.answer = answer
+        self.date = date
+    }
 }
