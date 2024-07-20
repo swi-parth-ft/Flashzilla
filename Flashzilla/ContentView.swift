@@ -28,7 +28,8 @@ struct ContentView: View {
     @State private var timeRemaining = 100
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var cardsVersion = UUID()
-
+    
+    let dataManager = DataManager()
     
     @Environment(\.scenePhase) var scenePhase
     @State private var isActive = false
@@ -156,51 +157,56 @@ struct ContentView: View {
     
     func removeCard(at index: Int, isCorrect: Bool) {
         guard index >= 0, index < cards.count else { return }
-
+        
         let card = cards[index]
         
-        if !isCorrect {
-            // Add the card back to the end of the array
-            cards.append(card)
-        }
-        // Remove the card from the array
+        // Remove the card from its current position
         cards.remove(at: index)
         
-        // Update the version to force view update
+        if !isCorrect {
+            // Add the card to the end of the array if incorrect
+            cards.insert(card, at: 0)
+        }
+        
+        // Update the version to force view refresh
         cardsVersion = UUID()
         
         // Save the updated cards data
-        saveData()
+        dataManager.saveData(cards)
         
         // Check if there are any cards left
         if cards.isEmpty {
             isActive = false
         }
     }
-
-    
-    func saveData() {
-        if let data = try? JSONEncoder().encode(cards) {
-            UserDefaults.standard.set(data, forKey: "Cards")
-        }
-    }
-    
     
     func resetCards() {
         timeRemaining = 100
         isActive = true
-        loadData()
+        cards = dataManager.loadData()
     }
     
-    func loadData() {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                cards = decoded
-            }
-        }
-    }
+    
 }
 
-#Preview {
-    ContentView()
+class DataManager {
+    func loadData() -> [Card] {
+        if let data = UserDefaults.standard.data(forKey: "Cards") {
+            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
+                return decoded
+            }
+        }
+        return []
+    }
+    
+    func saveData(_ cards: [Card]) {
+        if let data = try? JSONEncoder().encode(cards) {
+            UserDefaults.standard.set(data, forKey: "Cards")
+        }
+        
+    }
 }
+    
+    #Preview {
+        ContentView()
+    }
