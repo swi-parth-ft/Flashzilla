@@ -15,8 +15,8 @@ struct CardView: View {
     @State private var offset = CGSize.zero
     var removal: ((Bool) -> Void)? = nil
     
-    
-    
+    @State private var rotate = false
+    @State private var rotation = 0.0
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 25)
@@ -29,9 +29,10 @@ struct CardView: View {
                     accessibilityDifferentiateWithoutColor ?
                     nil :
                     RoundedRectangle(cornerRadius: 25)
-                        .fill(offset.width > 0 ? .green : .red)
+                        .fill(offset.width == 0 ? .clear : offset.width > 0 ? .green : .red)
                 )
                 .shadow(radius: 10)
+                .animation(.easeInOut, value: offset)
             VStack {
                 if accessibilityVoiceOverEnabled {
                     Text(isShowingAnswer ? card.answer : card.prompt)
@@ -39,14 +40,17 @@ struct CardView: View {
                         .foregroundStyle(.black)
                     
                 } else {
-                    Text(card.prompt)
-                        .font(.largeTitle)
-                        .foregroundStyle(.black)
-                    
+                    if !isShowingAnswer {
+                        Text(card.prompt)
+                            .font(.largeTitle)
+                            .foregroundStyle(.black)
+                    }
                     if isShowingAnswer {
                         Text(card.answer)
                             .font(.title)
                             .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(180))
+                            .scaleEffect(x: -1, y: 1)
                     }
                 }
             }
@@ -55,6 +59,7 @@ struct CardView: View {
         }
         .frame(width: 450, height: 250)
         .rotationEffect(.degrees(offset.width / 5.0))
+        .rotation3DEffect(rotate ? .degrees(rotation) : .degrees(0), axis: (x: 1, y: 0, z: 0))
         .offset(x: offset.width * 5)
         .opacity(2 - Double(abs(offset.width / 50)))
         .accessibilityAddTraits(.isButton)
@@ -65,7 +70,9 @@ struct CardView: View {
                 }
                 .onEnded { _ in
                     if abs(offset.width) > 100 {
-                        removal?(offset.width > 0)
+                        withAnimation {
+                            removal?(offset.width > 0)
+                        }
                     } else {
                         withAnimation {
                             offset = .zero
@@ -75,6 +82,11 @@ struct CardView: View {
         )
         .onTapGesture {
             isShowingAnswer.toggle()
+            withAnimation {
+                rotate = true
+                rotation += 180
+            }
+            
         }
         .animation(.bouncy, value: offset)
         
