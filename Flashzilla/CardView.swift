@@ -46,11 +46,17 @@ struct CardView: View {
                             .foregroundStyle(.black)
                     }
                     if isShowingAnswer {
-                        Text(card.answer)
-                            .font(.title)
-                            .foregroundStyle(.secondary)
-                            .rotationEffect(.degrees(180))
-                            .scaleEffect(x: -1, y: 1)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 25)
+                                .fill(.gray)
+                                .shadow(radius: 10)
+                            
+                            Text(card.answer)
+                                .font(.title)
+                                .foregroundStyle(.white)
+                                .rotationEffect(.degrees(180))
+                                .scaleEffect(x: -1, y: 1)
+                        }
                     }
                 }
             }

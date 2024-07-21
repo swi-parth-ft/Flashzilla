@@ -52,7 +52,7 @@ struct ContentView: View {
                 ZStack {
                     ForEach(cards) { card in
                         CardView(card: card) { isCorrect in
-                            withAnimation(.smooth(duration: 1)) {
+                            withAnimation {
                                 if let index = cards.firstIndex(of: card) {
                                     removeCard(at: index, isCorrect: isCorrect)
                                 }
@@ -68,7 +68,10 @@ struct ContentView: View {
                 .allowsHitTesting(timeRemaining > 0)
                 
                 if cards.isEmpty {
-                    Button("Start Again", action: resetCards)
+                    Button("Start Again") { 
+                        resetCards()
+                        addDemoCards()
+                    }
                         .padding()
                         .background(.white)
                         .foregroundStyle(.black)
@@ -182,6 +185,20 @@ struct ContentView: View {
         timeRemaining = 100
         isActive = true
         
+    }
+    
+    func addDemoCards() {
+        cards.forEach { card in
+                    modelContext.delete(card)
+                }
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("Failed to save context: \(error)")
+                }
+        
+        
         let demoCards = [
             Card(prompt: "What is the capital of France?", answer: "Paris", date: Date()),
             Card(prompt: "What is the largest planet in our solar system?", answer: "Jupiter", date: Date()),
@@ -216,9 +233,7 @@ struct ContentView: View {
                 }
                 
                 cardsVersion = UUID()
-        
     }
-    
     
 }
 
